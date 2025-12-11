@@ -1,5 +1,5 @@
 import "@shopify/shopify-api/adapters/node";
-import { shopifyApi, LATEST_API_VERSION, BillingInterval } from "@shopify/shopify-api";
+import { shopifyApi, ApiVersion, BillingInterval } from "@shopify/shopify-api";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-01";
 import { storeSession, loadSession, deleteSession } from "./lib/session.server";
 
@@ -15,7 +15,7 @@ export const shopify = shopifyApi({
   scopes,
   hostName: process.env.HOST?.replace(/https?:\/\//, "") || "localhost",
   hostScheme: process.env.HOST?.startsWith("https") ? "https" : "http",
-  apiVersion: LATEST_API_VERSION,
+  apiVersion: ApiVersion.January24,
   isEmbeddedApp: true,
   restResources,
   sessionStorage: {
