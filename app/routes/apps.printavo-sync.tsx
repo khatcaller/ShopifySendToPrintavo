@@ -93,7 +93,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       excluded_tags: "",
       printavo_api_key: "",
     },
-    activityLogs,
+    activityLogs: activityLogs || [],
   });
 };
 
