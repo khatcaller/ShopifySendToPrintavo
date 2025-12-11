@@ -170,7 +170,8 @@ export default function Dashboard() {
     submit(formData, { method: "post" });
   };
 
-  const activityRows = activityLogs.map((log) => [
+  const safeLogs = Array.isArray(activityLogs) ? activityLogs : [];
+  const activityRows = safeLogs.map((log) => [
     log.order_name || "N/A",
     log.status,
     log.message || "",
