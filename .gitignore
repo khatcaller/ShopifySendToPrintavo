@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Production
+/build
+/.cache
+
+# Misc
+.DS_Store
+*.log
+*.pem
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.db-journal
+data/
+
+# Shopify
+.shopify/
+

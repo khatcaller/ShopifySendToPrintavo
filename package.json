@@ -1,0 +1,47 @@
+{
+  "name": "printavo-sync",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "type": "module",
+  "scripts": {
+    "build": "remix build",
+    "dev": "remix dev --manual",
+    "start": "remix-serve ./build/index.js",
+    "typecheck": "tsc",
+    "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint ."
+  },
+  "dependencies": {
+    "@remix-run/node": "^2.0.0",
+    "@remix-run/react": "^2.0.0",
+    "@remix-run/serve": "^2.0.0",
+    "@shopify/app-bridge": "^3.7.11",
+    "@shopify/app-bridge-react": "^4.2.8",
+    "@shopify/polaris": "^13.9.5",
+    "@shopify/shopify-api": "^12.1.2",
+    "isbot": "^4.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3",
+    "better-sqlite3": "^9.2.2"
+  },
+  "devDependencies": {
+    "@remix-run/dev": "^2.0.0",
+    "@shopify/eslint-plugin": "^42.0.0",
+    "@shopify/prettier-config": "^1.0.2",
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11",
+    "vite-tsconfig-paths": "^4.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
