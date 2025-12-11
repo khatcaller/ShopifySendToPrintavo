@@ -34,13 +34,40 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   // For embedded apps, verify session exists for this shop
   // The session should have been created during OAuth
-  const sessionId = shopify.session.getJwtSessionId(shop, "");
+  const sessionId = `offline_${shop}`;
   const session = await loadSession(sessionId);
 
   if (!session) {
-    const authUrl = new URL("/auth", request.url);
-    authUrl.searchParams.set("shop", shop);
-    return redirect(authUrl.toString());
+    // For embedded apps, we need to exit iframe and do OAuth
+    // Return HTML that uses App Bridge to redirect
+    const authUrl = `${process.env.APP_URL || process.env.HOST}/auth?shop=${shop}`;
+    return new Response(
+      `<!DOCTYPE html>
+      <html>
+        <head><script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script></head>
+        <body>
+          <script>
+            document.addEventListener('DOMContentLoaded', function() {
+              if (window.top === window.self) {
+                window.location.href = "${authUrl}";
+              } else {
+                var AppBridge = window['app-bridge'];
+                var createApp = AppBridge.default;
+                var Redirect = AppBridge.actions.Redirect;
+                var app = createApp({
+                  apiKey: "${shopify.config.apiKey}",
+                  host: "${Buffer.from(shop).toString('base64').replace(/=/g, '')}",
+                });
+                var redirect = Redirect.create(app);
+                redirect.dispatch(Redirect.Action.REMOTE, "${authUrl}");
+              }
+            });
+          </script>
+          <p>Redirecting to authentication...</p>
+        </body>
+      </html>`,
+      { headers: { "Content-Type": "text/html" } }
+    );
   }
 
   const billing = checkBillingStatus(shop);
