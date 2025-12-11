@@ -18,6 +18,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${shopify.config.apiKey}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
 
+  console.log("[OAuth] Redirecting to:", authUrl);
+  console.log("[OAuth] Shop:", shop, "RedirectURI:", redirectUri);
+
   return redirect(authUrl);
 };
 
