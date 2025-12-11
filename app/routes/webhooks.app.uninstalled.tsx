@@ -1,6 +1,6 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
-import { shopify } from "~/shopify.server";
-import { handleAppUninstalled } from "~/lib/webhooks.server";
+import { shopify } from "../shopify.server";
+import { handleAppUninstalled } from "../lib/webhooks.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const topic = "APP_UNINSTALLED";

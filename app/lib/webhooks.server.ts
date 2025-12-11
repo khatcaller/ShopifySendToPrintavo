@@ -1,7 +1,7 @@
-import { shopify } from "~/shopify.server";
-import { syncOrderToPrintavo } from "~/printavo.server";
-import { db } from "~/db.server";
-import { deleteSessionsByShop } from "~/session.server";
+import { shopify } from "../shopify.server";
+import { syncOrderToPrintavo } from "./printavo.server";
+import { db } from "../db.server";
+import { deleteSessionsByShop } from "./session.server";
 import type { Session } from "@shopify/shopify-api";
 
 export async function registerWebhooks(session: Session): Promise<void> {
@@ -58,4 +58,5 @@ export async function handleAppUninstalled(shop: string): Promise<void> {
     VALUES (?, ?, ?)
   `).run(shop, "uninstalled", "App uninstalled - all data deleted");
 }
+
 

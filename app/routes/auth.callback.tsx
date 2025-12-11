@@ -1,10 +1,10 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { shopify } from "~/shopify.server";
-import { storeSession } from "~/lib/session.server";
-import { ensureBilling } from "~/lib/billing.server";
-import { registerWebhooks } from "~/lib/webhooks.server";
-import { db } from "~/db.server";
+import { shopify } from "../shopify.server";
+import { storeSession } from "../lib/session.server";
+import { ensureBilling } from "../lib/billing.server";
+import { registerWebhooks } from "../lib/webhooks.server";
+import { db } from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   return handleAuth(request);
@@ -55,4 +55,5 @@ async function handleAuth(request: Request) {
     throw new Response(`Authentication failed: ${error.message}`, { status: 500 });
   }
 }
+
 

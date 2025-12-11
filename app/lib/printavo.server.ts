@@ -1,4 +1,4 @@
-import { db } from "~/db.server";
+import { db } from "../db.server";
 
 interface PrintavoLineItem {
   name: string;
@@ -156,4 +156,5 @@ export async function testPrintavoConnection(apiKey: string): Promise<{
     };
   }
 }
+
 

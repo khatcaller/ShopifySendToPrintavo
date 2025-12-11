@@ -17,11 +17,11 @@ import {
   Checkbox,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { shopify } from "~/shopify.server";
-import { loadSession } from "~/lib/session.server";
-import { checkBillingStatus } from "~/lib/billing.server";
-import { testPrintavoConnection } from "~/lib/printavo.server";
-import { db } from "~/db.server";
+import { shopify } from "../shopify.server";
+import { loadSession } from "../lib/session.server";
+import { checkBillingStatus } from "../lib/billing.server";
+import { testPrintavoConnection } from "../lib/printavo.server";
+import { db } from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);

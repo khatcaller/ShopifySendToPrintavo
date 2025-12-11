@@ -1,4 +1,4 @@
-import { db } from "~/db.server";
+import { db } from "../db.server";
 import { Session } from "@shopify/shopify-api";
 
 export async function storeSession(session: Session): Promise<void> {
@@ -50,4 +50,5 @@ export async function deleteSession(id: string): Promise<void> {
 export async function deleteSessionsByShop(shop: string): Promise<void> {
   db.prepare("DELETE FROM sessions WHERE shop = ?").run(shop);
 }
+
 

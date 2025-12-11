@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { shopify } from "~/shopify.server";
+import { shopify } from "../shopify.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -19,4 +19,5 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return redirect(authRoute);
 };
+
 

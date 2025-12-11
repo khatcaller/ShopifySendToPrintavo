@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { db } from "~/db.server";
+import { db } from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
@@ -26,4 +26,5 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
   }
 };
+
 

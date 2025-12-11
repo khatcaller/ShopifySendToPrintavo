@@ -1,7 +1,7 @@
 import "@shopify/shopify-api/adapters/node";
 import { shopifyApi, LATEST_API_VERSION, BillingInterval } from "@shopify/shopify-api";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-01";
-import { storeSession, loadSession, deleteSession } from "~/lib/session.server";
+import { storeSession, loadSession, deleteSession } from "./lib/session.server";
 
 if (!process.env.SHOPIFY_API_KEY || !process.env.SHOPIFY_API_SECRET) {
   throw new Error("Missing SHOPIFY_API_KEY or SHOPIFY_API_SECRET");

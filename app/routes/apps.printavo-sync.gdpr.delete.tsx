@@ -1,7 +1,7 @@
 import type { ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { db } from "~/db.server";
-import { deleteSessionsByShop } from "~/lib/session.server";
+import { db } from "../db.server";
+import { deleteSessionsByShop } from "../lib/session.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   if (request.method !== "POST") {
@@ -27,4 +27,5 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ error: error.message }, { status: 500 });
   }
 };
+
 

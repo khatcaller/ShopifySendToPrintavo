@@ -1,5 +1,5 @@
-import { shopify, BILLING_PLAN } from "~/shopify.server";
-import { db } from "~/db.server";
+import { shopify, BILLING_PLAN } from "../shopify.server";
+import { db } from "../db.server";
 import type { Session } from "@shopify/shopify-api";
 
 export async function ensureBilling(
@@ -67,4 +67,5 @@ export function checkBillingStatus(shop: string): {
     trialEndsAt: merchant.trial_ends_at,
   };
 }
+
 
