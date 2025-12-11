@@ -1,7 +1,21 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { useLoaderData, useActionData, useSubmit, Form } from "@remix-run/react";
-import { AppProvider, Page, Card, Layout, Text, Button, TextField, Banner, Stack, Toggle, Badge, DataTable, EmptyState } from "@shopify/polaris";
+import {
+  AppProvider,
+  Page,
+  Card,
+  Layout,
+  Text,
+  Button,
+  TextField,
+  Banner,
+  Badge,
+  DataTable,
+  EmptyState,
+  Box,
+  Checkbox,
+} from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
 import { shopify } from "~/shopify.server";
 import { loadSession } from "~/lib/session.server";
@@ -173,29 +187,29 @@ export default function Dashboard() {
         <Layout>
           <Layout.Section>
             <Card>
-              <Stack vertical spacing="loose">
+              <Box display="flex" flexDirection="column" gap="400">
                 <Text variant="headingMd" as="h2">
                   Sync Settings
                 </Text>
 
                 <Form onSubmit={handleSave}>
-                  <Stack vertical spacing="loose">
-                    <Toggle
+                  <Box display="flex" flexDirection="column" gap="300">
+                    <Checkbox
                       label="Enable Sync"
                       checked={merchant.sync_enabled === 1}
-                      onChange={(value) => handleToggle("sync_enabled", value)}
+                      onChange={(checked) => handleToggle("sync_enabled", checked)}
                     />
 
-                    <Toggle
+                    <Checkbox
                       label="Skip Gift Cards"
                       checked={merchant.skip_gift_cards === 1}
-                      onChange={(value) => handleToggle("skip_gift_cards", value)}
+                      onChange={(checked) => handleToggle("skip_gift_cards", checked)}
                     />
 
-                    <Toggle
+                    <Checkbox
                       label="Skip Non-Physical Products"
                       checked={merchant.skip_non_physical === 1}
-                      onChange={(value) => handleToggle("skip_non_physical", value)}
+                      onChange={(checked) => handleToggle("skip_non_physical", checked)}
                     />
 
                     <TextField
@@ -238,15 +252,15 @@ export default function Dashboard() {
                     <Button onClick={handleTestConnection} submit>
                       Test Connection
                     </Button>
-                  </Stack>
+                  </Box>
                 </Form>
-              </Stack>
+              </Box>
             </Card>
           </Layout.Section>
 
           <Layout.Section>
             <Card>
-              <Stack vertical spacing="loose">
+              <Box display="flex" flexDirection="column" gap="300">
                 <Text variant="headingMd" as="h2">
                   Activity Log
                 </Text>
@@ -266,7 +280,7 @@ export default function Dashboard() {
                     rows={activityRows}
                   />
                 )}
-              </Stack>
+              </Box>
             </Card>
           </Layout.Section>
         </Layout>
