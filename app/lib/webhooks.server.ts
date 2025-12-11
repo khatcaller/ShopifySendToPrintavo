@@ -4,24 +4,42 @@ import { db } from "../db.server";
 import { deleteSessionsByShop } from "./session.server";
 import type { Session } from "@shopify/shopify-api";
 
-export async function registerWebhooks(session: Session): Promise<void> {
+export async function registerWebhooks(session: any): Promise<void> {
   const webhooks = [
     {
-      topic: "ORDERS_CREATE",
-      path: "/webhooks/orders/create",
+      topic: "orders/create",
+      address: `${shopify.config.hostScheme}://${shopify.config.hostName}/webhooks/orders/create`,
     },
     {
-      topic: "APP_UNINSTALLED",
-      path: "/webhooks/app/uninstalled",
+      topic: "app/uninstalled",
+      address: `${shopify.config.hostScheme}://${shopify.config.hostName}/webhooks/app/uninstalled`,
     },
   ];
 
   for (const webhook of webhooks) {
     try {
-      await shopify.webhooks.register({
-        session,
-        ...webhook,
-      });
+      // Register webhook via REST API since we can't use shopify.webhooks.register
+      const response = await fetch(
+        `https://${session.shop}/admin/api/2024-01/webhooks.json`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": session.accessToken,
+          },
+          body: JSON.stringify({
+            webhook: {
+              topic: webhook.topic,
+              address: webhook.address,
+              format: "json",
+            },
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        console.error(`Failed to register webhook ${webhook.topic}:`, await response.text());
+      }
     } catch (error) {
       console.error(`Failed to register webhook ${webhook.topic}:`, error);
     }

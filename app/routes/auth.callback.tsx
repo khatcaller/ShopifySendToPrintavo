@@ -23,12 +23,44 @@ async function handleAuth(request: Request) {
   }
 
   try {
-    const callbackResponse = await shopify.auth.callback({
-      rawRequest: request,
-      rawResponse: new Response(),
-    });
+    // Extract OAuth params manually since Remix doesn't have raw Node req/res
+    const code = url.searchParams.get("code");
+    const hmac = url.searchParams.get("hmac");
+    const state = url.searchParams.get("state");
 
-    const { session } = callbackResponse;
+    if (!code || !hmac) {
+      throw new Response("Missing OAuth parameters", { status: 400 });
+    }
+
+    // Exchange code for access token
+    const tokenResponse = await fetch(
+      `https://${shop}/admin/oauth/access_token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: shopify.config.apiKey,
+          client_secret: shopify.config.apiSecretKey,
+          code,
+        }),
+      }
+    );
+
+    if (!tokenResponse.ok) {
+      throw new Response("Failed to exchange OAuth code", { status: 500 });
+    }
+
+    const { access_token, scope } = await tokenResponse.json();
+
+    // Create session manually
+    const session = {
+      id: `offline_${shop}`,
+      shop,
+      state: state || "",
+      isOnline: false,
+      scope,
+      accessToken: access_token,
+    };
 
     await storeSession(session);
 
