@@ -15,6 +15,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     callbackPath: "/auth/callback",
     isOnline: false,
     rawRequest: request,
+    rawResponse: new Response(),
   });
 
   return redirect(authRoute);
