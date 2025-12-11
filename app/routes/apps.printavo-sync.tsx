@@ -171,6 +171,8 @@ export default function Dashboard() {
   };
 
   const safeLogs = Array.isArray(activityLogs) ? activityLogs : [];
+  const safeBilling = billing || { status: "pending", trialEndsAt: null };
+
   const activityRows = safeLogs.map((log) => [
     log.order_name || "N/A",
     log.status,
@@ -178,7 +180,8 @@ export default function Dashboard() {
     new Date(log.created_at).toLocaleString(),
   ]);
 
-  const isTrialActive = billing.trialEndsAt && new Date(billing.trialEndsAt) > new Date();
+  const isTrialActive =
+    safeBilling.trialEndsAt && new Date(safeBilling.trialEndsAt) > new Date();
 
   return (
     <AppProvider
