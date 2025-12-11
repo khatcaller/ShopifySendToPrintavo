@@ -4,6 +4,13 @@ import { restResources } from "@shopify/shopify-api/rest/admin/2024-01";
 import { storeSession, loadSession, deleteSession } from "./lib/session.server";
 
 if (!process.env.SHOPIFY_API_KEY || !process.env.SHOPIFY_API_SECRET) {
+  console.error("Shopify env check failed", {
+    hasKey: !!process.env.SHOPIFY_API_KEY,
+    keyLen: process.env.SHOPIFY_API_KEY?.length,
+    hasSecret: !!process.env.SHOPIFY_API_SECRET,
+    secretLen: process.env.SHOPIFY_API_SECRET?.length,
+    envKeys: Object.keys(process.env || {}).filter((k) => k.startsWith("SHOPIFY_")),
+  });
   throw new Error("Missing SHOPIFY_API_KEY or SHOPIFY_API_SECRET");
 }
 
