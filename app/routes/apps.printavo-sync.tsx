@@ -35,7 +35,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // For embedded apps, verify session exists for this shop
   // The session should have been created during OAuth
   const sessionId = shopify.session.getJwtSessionId(shop, "");
-  const session = await shopify.sessionStorage.loadSession(sessionId);
+  const session = await loadSession(sessionId);
 
   if (!session) {
     const authUrl = new URL("/auth", request.url);
