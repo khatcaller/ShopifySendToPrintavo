@@ -200,7 +200,7 @@ export default function Dashboard() {
       }}
     >
       <Page title="Printavo Sync">
-        {billing.status !== "active" && !isTrialActive && (
+        {safeBilling.status !== "active" && !isTrialActive && (
           <Banner status="critical" title="Billing Required">
             <p>Please complete billing setup to continue using the app.</p>
           </Banner>
@@ -209,7 +209,7 @@ export default function Dashboard() {
         {isTrialActive && (
           <Banner status="info" title="Trial Active">
             <p>
-              Your 7-day trial ends on {new Date(billing.trialEndsAt!).toLocaleDateString()}
+              Your 7-day trial ends on {new Date(safeBilling.trialEndsAt!).toLocaleDateString()}
             </p>
           </Banner>
         )}
