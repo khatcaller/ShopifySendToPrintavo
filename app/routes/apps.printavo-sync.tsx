@@ -304,7 +304,7 @@ export default function Dashboard() {
                   Activity Log
                 </Text>
 
-                {activityLogs.length === 0 ? (
+                {safeLogs.length === 0 ? (
                   <EmptyState
                     heading="No activity yet"
                     action={{ content: "View orders", url: "/admin/orders" }}
