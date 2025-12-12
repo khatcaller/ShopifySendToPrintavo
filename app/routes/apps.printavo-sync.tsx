@@ -94,6 +94,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       printavo_api_key: "",
     },
     activityLogs: activityLogs || [],
+    apiKey: process.env.SHOPIFY_API_KEY || "",
   });
 };
 
@@ -129,7 +130,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Dashboard() {
-  const { shop, host, billing, merchant, activityLogs } = useLoaderData<typeof loader>();
+  const { shop, host, billing, merchant, activityLogs, apiKey } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const app = useAppBridge();
@@ -194,7 +195,7 @@ export default function Dashboard() {
   return (
     <AppProvider
       config={{
-        apiKey: process.env.SHOPIFY_API_KEY || "",
+        apiKey,
         host,
         forceRedirect: true,
       }}
