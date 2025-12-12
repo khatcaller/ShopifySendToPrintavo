@@ -1,6 +1,7 @@
 import { json } from "@remix-run/node";
 
 export const loader = async () => {
-  return json({ ok: true });
+  console.log("[HEALTH CHECK] /health endpoint hit");
+  return json({ ok: true, timestamp: new Date().toISOString() });
 };
 
