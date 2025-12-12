@@ -139,11 +139,11 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append("intent", "update_settings");
     formData.append("shop", shop);
-    formData.append("sync_enabled", merchant.sync_enabled ? "on" : "off");
-    formData.append("skip_gift_cards", merchant.skip_gift_cards ? "on" : "off");
-    formData.append("skip_non_physical", merchant.skip_non_physical ? "on" : "off");
-    formData.append("excluded_tags", merchant.excluded_tags || "");
-    formData.append("printavo_api_key", merchant.printavo_api_key || "");
+    formData.append("sync_enabled", safeMerchant.sync_enabled ? "on" : "off");
+    formData.append("skip_gift_cards", safeMerchant.skip_gift_cards ? "on" : "off");
+    formData.append("skip_non_physical", safeMerchant.skip_non_physical ? "on" : "off");
+    formData.append("excluded_tags", safeMerchant.excluded_tags || "");
+    formData.append("printavo_api_key", safeMerchant.printavo_api_key || "");
 
     if (field === "sync_enabled") {
       formData.set("sync_enabled", value ? "on" : "off");
@@ -308,7 +308,6 @@ export default function Dashboard() {
                 {safeLogs.length === 0 ? (
                   <EmptyState
                     heading="No activity yet"
-                    action={{ content: "View orders", url: "/admin/orders" }}
                     image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                   >
                     <p>Order sync activity will appear here once orders are created.</p>
