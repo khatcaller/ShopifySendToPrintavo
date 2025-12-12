@@ -22,7 +22,7 @@ import {
   Divider,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { shopify } from "../shopify.server";
 import { loadSession } from "../lib/session.server";
 import { checkBillingStatus } from "../lib/billing.server";
@@ -169,6 +169,13 @@ export default function Dashboard() {
   const [skipNonPhysical, setSkipNonPhysical] = useState(safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true);
   const [testing, setTesting] = useState(false);
 
+  // Clear testing state when action completes
+  useEffect(() => {
+    if (actionData && testing) {
+      setTesting(false);
+    }
+  }, [actionData]);
+
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -183,7 +190,6 @@ export default function Dashboard() {
     formData.append("intent", "test_connection");
     formData.append("api_key", apiKeyValue);
     submit(formData, { method: "post" });
-    setTimeout(() => setTesting(false), 2000);
   };
 
   const activityRows = safeLogs.map((log) => [
@@ -225,15 +231,16 @@ export default function Dashboard() {
           </Banner>
         )}
 
-        {actionData?.message && actionData.message !== "Invalid action" && (
-          <Banner
-            tone={actionData.success ? "success" : "critical"}
-            title={actionData.success ? "Success" : "Error"}
-            onDismiss={() => window.location.reload()}
-          >
-            <p>{actionData.message}</p>
-          </Banner>
-        )}
+        <BlockStack gap="400">
+          {actionData?.message && actionData.message !== "Invalid action" && (
+            <Banner
+              tone={actionData.success ? "success" : "critical"}
+              title={actionData.success ? "Success" : "Error"}
+            >
+              <p>{actionData.message}</p>
+            </Banner>
+          )}
+        </BlockStack>
 
         <Layout>
           <Layout.Section>
@@ -251,31 +258,13 @@ export default function Dashboard() {
                   autoComplete="off"
                 />
 
-                <InlineStack gap="300" blockAlign="center">
-                  <Button 
-                    onClick={handleTestConnection}
-                    loading={testing}
-                    disabled={!apiKeyValue}
-                  >
-                    Test Connection
-                  </Button>
-                  {!testing && actionData?.success && (
-                    <InlineStack gap="200" blockAlign="center">
-                      <Badge tone="success">✓ Connected</Badge>
-                      <Text as="span" tone="success">
-                        Connection successful
-                      </Text>
-                    </InlineStack>
-                  )}
-                  {!testing && actionData && !actionData.success && (
-                    <InlineStack gap="200" blockAlign="center">
-                      <Badge tone="critical">✗ Failed</Badge>
-                      <Text as="span" tone="critical">
-                        {actionData.message}
-                      </Text>
-                    </InlineStack>
-                  )}
-                </InlineStack>
+                <Button 
+                  onClick={handleTestConnection}
+                  loading={testing}
+                  disabled={!apiKeyValue}
+                >
+                  Test Connection
+                </Button>
               </BlockStack>
             </Card>
           </Layout.Section>
