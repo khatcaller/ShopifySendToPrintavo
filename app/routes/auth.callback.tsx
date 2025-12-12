@@ -69,16 +69,16 @@ async function handleAuth(request: Request) {
       INSERT OR IGNORE INTO merchants (shop) VALUES (?)
     `).run(session.shop);
 
+    // Register webhooks immediately (for testing, regardless of billing)
+    await registerWebhooks(session);
+
     // Check billing
     const isProd = process.env.NODE_ENV === "production";
     const billing = await ensureBilling(session, isProd);
 
-    if (!billing.hasPayment) {
+    if (!billing.hasPayment && isProd) {
       return redirect(billing.confirmationUrl || "/");
     }
-
-    // Register webhooks after billing is confirmed
-    await registerWebhooks(session);
 
     // Redirect to app - construct host parameter
     const hostParam = url.searchParams.get("host") || Buffer.from(`admin.shopify.com/store/${shop.replace('.myshopify.com', '')}`).toString('base64').replace(/=/g, '');
