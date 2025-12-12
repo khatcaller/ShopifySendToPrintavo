@@ -5,6 +5,8 @@ import { deleteSessionsByShop } from "./session.server";
 import type { Session } from "@shopify/shopify-api";
 
 export async function registerWebhooks(session: any): Promise<void> {
+  console.log("[WEBHOOKS] Starting registration for shop:", session.shop);
+  
   const webhooks = [
     {
       topic: "orders/create",
@@ -18,6 +20,8 @@ export async function registerWebhooks(session: any): Promise<void> {
 
   for (const webhook of webhooks) {
     try {
+      console.log(`[WEBHOOKS] Registering ${webhook.topic} to ${webhook.address}`);
+      
       // Register webhook via REST API since we can't use shopify.webhooks.register
       const response = await fetch(
         `https://${session.shop}/admin/api/2024-01/webhooks.json`,
@@ -38,12 +42,18 @@ export async function registerWebhooks(session: any): Promise<void> {
       );
 
       if (!response.ok) {
-        console.error(`Failed to register webhook ${webhook.topic}:`, await response.text());
+        const errorText = await response.text();
+        console.error(`[WEBHOOKS] Failed to register ${webhook.topic}: ${response.status} - ${errorText}`);
+      } else {
+        const result = await response.json();
+        console.log(`[WEBHOOKS] Successfully registered ${webhook.topic}:`, result.webhook?.id);
       }
     } catch (error) {
-      console.error(`Failed to register webhook ${webhook.topic}:`, error);
+      console.error(`[WEBHOOKS] Error registering ${webhook.topic}:`, error);
     }
   }
+  
+  console.log("[WEBHOOKS] Registration complete");
 }
 
 export async function handleOrdersCreate(shop: string, order: any): Promise<void> {
