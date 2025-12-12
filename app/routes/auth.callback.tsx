@@ -18,6 +18,8 @@ async function handleAuth(request: Request) {
   const url = new URL(request.url);
   const shop = url.searchParams.get("shop");
 
+  console.log("[AUTH] Callback started for shop:", shop);
+
   if (!shop) {
     throw new Response("Missing shop parameter", { status: 400 });
   }
@@ -27,6 +29,8 @@ async function handleAuth(request: Request) {
     const code = url.searchParams.get("code");
     const hmac = url.searchParams.get("hmac");
     const state = url.searchParams.get("state");
+
+    console.log("[AUTH] OAuth params - code:", !!code, "hmac:", !!hmac);
 
     if (!code || !hmac) {
       throw new Response("Missing OAuth parameters", { status: 400 });
@@ -52,6 +56,8 @@ async function handleAuth(request: Request) {
 
     const { access_token, scope } = await tokenResponse.json();
 
+    console.log("[AUTH] Token exchange successful, scope:", scope);
+
     // Create session manually
     const session = {
       id: `offline_${shop}`,
@@ -63,25 +69,32 @@ async function handleAuth(request: Request) {
     };
 
     await storeSession(session);
+    console.log("[AUTH] Session stored");
 
     // Create or update merchant record
     db.prepare(`
       INSERT OR IGNORE INTO merchants (shop) VALUES (?)
     `).run(session.shop);
+    console.log("[AUTH] Merchant record created");
 
     // Register webhooks immediately (for testing, regardless of billing)
+    console.log("[AUTH] About to register webhooks...");
     await registerWebhooks(session);
+    console.log("[AUTH] Webhook registration call completed");
 
     // Check billing
     const isProd = process.env.NODE_ENV === "production";
+    console.log("[AUTH] Checking billing, isProd:", isProd);
     const billing = await ensureBilling(session, isProd);
 
     if (!billing.hasPayment && isProd) {
+      console.log("[AUTH] Redirecting to billing confirmation");
       return redirect(billing.confirmationUrl || "/");
     }
 
     // Redirect to app - construct host parameter
     const hostParam = url.searchParams.get("host") || Buffer.from(`admin.shopify.com/store/${shop.replace('.myshopify.com', '')}`).toString('base64').replace(/=/g, '');
+    console.log("[AUTH] Redirecting to dashboard with host:", hostParam);
     return redirect(`/apps/printavo-sync?shop=${session.shop}&host=${hostParam}`);
   } catch (error: any) {
     console.error("Auth callback error:", error);
