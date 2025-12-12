@@ -150,11 +150,6 @@ export default function Dashboard() {
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [apiKeyValue, setApiKeyValue] = useState(merchant.printavo_api_key || "");
-  const [syncMode, setSyncMode] = useState(merchant.sync_mode || "all");
-  const [includedTags, setIncludedTags] = useState(merchant.included_tags || "");
-
   const safeLogs = Array.isArray(activityLogs) ? activityLogs : [];
   const safeBilling = billing || { status: "pending", trialEndsAt: null };
   const safeMerchant = merchant || {
@@ -165,6 +160,11 @@ export default function Dashboard() {
     included_tags: "",
     printavo_api_key: "",
   };
+
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [apiKeyValue, setApiKeyValue] = useState(safeMerchant.printavo_api_key || "");
+  const [syncMode, setSyncMode] = useState(safeMerchant.sync_mode || "all");
+  const [includedTags, setIncludedTags] = useState(safeMerchant.included_tags || "");
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
