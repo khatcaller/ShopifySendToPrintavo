@@ -80,8 +80,9 @@ async function handleAuth(request: Request) {
     // Register webhooks after billing is confirmed
     await registerWebhooks(session);
 
-    // Redirect to app
-    return redirect(`/apps/printavo-sync?shop=${session.shop}&host=${url.searchParams.get("host")}`);
+    // Redirect to app - construct host parameter
+    const hostParam = url.searchParams.get("host") || Buffer.from(`admin.shopify.com/store/${shop.replace('.myshopify.com', '')}`).toString('base64').replace(/=/g, '');
+    return redirect(`/apps/printavo-sync?shop=${session.shop}&host=${hostParam}`);
   } catch (error: any) {
     console.error("Auth callback error:", error);
     throw new Response(`Authentication failed: ${error.message}`, { status: 500 });
