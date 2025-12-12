@@ -7,7 +7,7 @@
   "scripts": {
     "build": "remix build",
     "dev": "remix dev --manual",
-    "start": "remix-serve ./build/index.js --hostname 0.0.0.0 --port ${PORT:-3000}",
+    "start": "node -e \"const {spawn}=require('child_process'); const port=Number(process.env.PORT||3000); spawn('remix-serve',['./build/index.js','--hostname','0.0.0.0','--port',String(port)],{stdio:'inherit'});\"",
     "typecheck": "tsc",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint ."
   },
