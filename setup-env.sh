@@ -54,3 +54,4 @@ echo ""
 echo "4. In another terminal, run:"
 echo "   shopify app dev"
 
+

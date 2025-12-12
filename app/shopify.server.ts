@@ -3,6 +3,12 @@ import { shopifyApi, ApiVersion, BillingInterval } from "@shopify/shopify-api";
 import { restResources } from "@shopify/shopify-api/rest/admin/2024-01";
 import { storeSession, loadSession, deleteSession } from "./lib/session.server";
 
+// Prefer APP_URL for Shopify host config; fall back to HOST; default localhost.
+const appUrl =
+  process.env.APP_URL ||
+  process.env.HOST ||
+  "http://localhost:3000";
+
 if (!process.env.SHOPIFY_API_KEY || !process.env.SHOPIFY_API_SECRET) {
   console.error("Shopify env check failed", {
     hasKey: !!process.env.SHOPIFY_API_KEY,
@@ -20,8 +26,8 @@ export const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
   scopes,
-  hostName: process.env.HOST?.replace(/https?:\/\//, "") || "localhost",
-  hostScheme: process.env.HOST?.startsWith("https") ? "https" : "http",
+  hostName: appUrl.replace(/https?:\/\//, "").replace(/\/$/, ""),
+  hostScheme: appUrl.startsWith("https") ? "https" : "http",
   apiVersion: ApiVersion.January24,
   isEmbeddedApp: true,
   restResources,

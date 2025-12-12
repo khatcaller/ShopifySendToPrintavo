@@ -172,6 +172,14 @@ export default function Dashboard() {
 
   const safeLogs = Array.isArray(activityLogs) ? activityLogs : [];
   const safeBilling = billing || { status: "pending", trialEndsAt: null };
+  const safeMerchant =
+    merchant || {
+      sync_enabled: true,
+      skip_gift_cards: true,
+      skip_non_physical: true,
+      excluded_tags: "",
+      printavo_api_key: "",
+    };
 
   const activityRows = safeLogs.map((log) => [
     log.order_name || "N/A",
@@ -227,25 +235,25 @@ export default function Dashboard() {
                   <Box display="flex" flexDirection="column" gap="300">
                     <Checkbox
                       label="Enable Sync"
-                      checked={merchant.sync_enabled === 1}
+                      checked={safeMerchant.sync_enabled === 1 || safeMerchant.sync_enabled === true}
                       onChange={(checked) => handleToggle("sync_enabled", checked)}
                     />
 
                     <Checkbox
                       label="Skip Gift Cards"
-                      checked={merchant.skip_gift_cards === 1}
+                      checked={safeMerchant.skip_gift_cards === 1 || safeMerchant.skip_gift_cards === true}
                       onChange={(checked) => handleToggle("skip_gift_cards", checked)}
                     />
 
                     <Checkbox
                       label="Skip Non-Physical Products"
-                      checked={merchant.skip_non_physical === 1}
+                      checked={safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true}
                       onChange={(checked) => handleToggle("skip_non_physical", checked)}
                     />
 
                     <TextField
                       label="Excluded Tags"
-                      value={merchant.excluded_tags || ""}
+                      value={safeMerchant.excluded_tags || ""}
                       onChange={(value) => {
                         const formData = new FormData();
                         formData.append("intent", "update_settings");
@@ -264,7 +272,7 @@ export default function Dashboard() {
                     <TextField
                       label="Printavo API Key"
                       type="password"
-                      value={merchant.printavo_api_key || ""}
+                      value={safeMerchant.printavo_api_key || ""}
                       onChange={(value) => {
                         const formData = new FormData();
                         formData.append("intent", "update_settings");

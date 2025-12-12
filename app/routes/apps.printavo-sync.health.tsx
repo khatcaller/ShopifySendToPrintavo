@@ -4,9 +4,7 @@ import { db } from "../db.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   try {
-    // Simple health check - verify database is accessible
     db.prepare("SELECT 1").get();
-
     return json(
       {
         status: "healthy",
