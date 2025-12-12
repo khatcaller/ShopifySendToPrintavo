@@ -165,6 +165,8 @@ export default function Dashboard() {
   const [apiKeyValue, setApiKeyValue] = useState(safeMerchant.printavo_api_key || "");
   const [syncMode, setSyncMode] = useState(safeMerchant.sync_mode || "all");
   const [includedTags, setIncludedTags] = useState(safeMerchant.included_tags || "");
+  const [skipGiftCards, setSkipGiftCards] = useState(safeMerchant.skip_gift_cards === 1 || safeMerchant.skip_gift_cards === true);
+  const [skipNonPhysical, setSkipNonPhysical] = useState(safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true);
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -204,10 +206,10 @@ export default function Dashboard() {
         subtitle="Automatically send approved Shopify orders to Printavo."
       >
         {safeBilling.status !== "active" && !isTrialActive && (
-          <Banner tone="info" title="Billing Setup">
+          <Banner tone="info" title="App Configuration">
             <p>
-              Billing is required to enable automatic order syncing. You can configure 
-              settings before activating a plan.
+              Configure your sync settings and test your Printavo connection below. 
+              Automatic syncing will be enabled once billing is set up.
             </p>
           </Banner>
         )}
@@ -307,21 +309,23 @@ export default function Dashboard() {
 
                       <Checkbox
                         label="Skip Gift Cards"
-                        checked={safeMerchant.skip_gift_cards === 1 || safeMerchant.skip_gift_cards === true}
-                        name="skip_gift_cards"
+                        checked={skipGiftCards}
+                        onChange={setSkipGiftCards}
                         helpText="Gift card orders will not be sent to Printavo."
                       />
 
                       <Checkbox
                         label="Skip Non-Physical Products"
-                        checked={safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true}
-                        name="skip_non_physical"
+                        checked={skipNonPhysical}
+                        onChange={setSkipNonPhysical}
                         helpText="Digital or service products will be excluded."
                       />
 
                       <input type="hidden" name="sync_mode" value={syncMode} />
                       <input type="hidden" name="printavo_api_key" value={apiKeyValue} />
                       <input type="hidden" name="sync_enabled" value="on" />
+                      <input type="hidden" name="skip_gift_cards" value={skipGiftCards ? "on" : "off"} />
+                      <input type="hidden" name="skip_non_physical" value={skipNonPhysical ? "on" : "off"} />
 
                       <Button submit variant="primary">
                         Save Settings
