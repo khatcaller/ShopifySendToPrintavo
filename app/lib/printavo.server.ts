@@ -20,7 +20,7 @@ export async function syncOrderToPrintavo(
   order: any
 ): Promise<{ success: boolean; message: string }> {
   const merchant = db
-    .prepare("SELECT printavo_api_key, sync_enabled, skip_gift_cards, skip_non_physical, excluded_tags FROM merchants WHERE shop = ?")
+    .prepare("SELECT printavo_api_key, sync_enabled, sync_mode, skip_gift_cards, skip_non_physical, included_tags FROM merchants WHERE shop = ?")
     .get(shop) as any;
 
   if (!merchant) {
@@ -34,6 +34,30 @@ export async function syncOrderToPrintavo(
   const apiKey = merchant.printavo_api_key || process.env.PRINTAVO_API_KEY;
   if (!apiKey) {
     return { success: false, message: "Printavo API key not configured" };
+  }
+
+  // Check sync mode - if "tagged", only sync orders with included tags
+  const syncMode = merchant.sync_mode || "all";
+  if (syncMode === "tagged") {
+    const includedTags = (merchant.included_tags || "")
+      .split(",")
+      .map((t: string) => t.trim().toLowerCase())
+      .filter((t: string) => t.length > 0);
+
+    if (includedTags.length === 0) {
+      return { success: false, message: "No included tags configured for tagged sync mode" };
+    }
+
+    const orderTags = (order.tags || "")
+      .split(",")
+      .map((t: string) => t.trim().toLowerCase())
+      .filter((t: string) => t.length > 0);
+
+    const hasMatchingTag = orderTags.some((tag: string) => includedTags.includes(tag));
+
+    if (!hasMatchingTag) {
+      return { success: false, message: "Order does not have required tags" };
+    }
   }
 
   // Check if all products are non-physical
@@ -61,19 +85,6 @@ export async function syncOrderToPrintavo(
     // Skip non-physical if enabled
     if (merchant.skip_non_physical && !item.requires_shipping) {
       return false;
-    }
-
-    // Check excluded tags
-    const excludedTags = (merchant.excluded_tags || "")
-      .split(",")
-      .map((t: string) => t.trim().toLowerCase())
-      .filter((t: string) => t.length > 0);
-
-    if (excludedTags.length > 0) {
-      const itemTags = (item.tags || "").split(",").map((t: string) => t.trim().toLowerCase());
-      if (itemTags.some((tag: string) => excludedTags.includes(tag))) {
-        return false;
-      }
     }
 
     return true;
