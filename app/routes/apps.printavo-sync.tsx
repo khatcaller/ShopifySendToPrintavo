@@ -167,6 +167,7 @@ export default function Dashboard() {
   const [includedTags, setIncludedTags] = useState(safeMerchant.included_tags || "");
   const [skipGiftCards, setSkipGiftCards] = useState(safeMerchant.skip_gift_cards === 1 || safeMerchant.skip_gift_cards === true);
   const [skipNonPhysical, setSkipNonPhysical] = useState(safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true);
+  const [testing, setTesting] = useState(false);
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -177,10 +178,12 @@ export default function Dashboard() {
   };
 
   const handleTestConnection = () => {
+    setTesting(true);
     const formData = new FormData();
     formData.append("intent", "test_connection");
     formData.append("api_key", apiKeyValue);
     submit(formData, { method: "post" });
+    setTimeout(() => setTesting(false), 2000);
   };
 
   const activityRows = safeLogs.map((log) => [
@@ -222,10 +225,11 @@ export default function Dashboard() {
           </Banner>
         )}
 
-        {actionData?.message && (
+        {actionData?.message && actionData.message !== "Invalid action" && (
           <Banner
             tone={actionData.success ? "success" : "critical"}
             title={actionData.success ? "Success" : "Error"}
+            onDismiss={() => window.location.reload()}
           >
             <p>{actionData.message}</p>
           </Banner>
@@ -247,12 +251,29 @@ export default function Dashboard() {
                   autoComplete="off"
                 />
 
-                <InlineStack gap="200">
-                  <Button onClick={handleTestConnection}>
+                <InlineStack gap="300" blockAlign="center">
+                  <Button 
+                    onClick={handleTestConnection}
+                    loading={testing}
+                    disabled={!apiKeyValue}
+                  >
                     Test Connection
                   </Button>
-                  {actionData?.success && actionData.message.includes("success") && (
-                    <Badge tone="success">Connected</Badge>
+                  {!testing && actionData?.success && (
+                    <InlineStack gap="200" blockAlign="center">
+                      <Badge tone="success">✓ Connected</Badge>
+                      <Text as="span" tone="success">
+                        Connection successful
+                      </Text>
+                    </InlineStack>
+                  )}
+                  {!testing && actionData && !actionData.success && (
+                    <InlineStack gap="200" blockAlign="center">
+                      <Badge tone="critical">✗ Failed</Badge>
+                      <Text as="span" tone="critical">
+                        {actionData.message}
+                      </Text>
+                    </InlineStack>
                   )}
                 </InlineStack>
               </BlockStack>
