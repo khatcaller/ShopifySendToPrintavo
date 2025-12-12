@@ -15,8 +15,14 @@ import {
   EmptyState,
   Box,
   Checkbox,
+  BlockStack,
+  InlineStack,
+  Collapsible,
+  ChoiceList,
+  Divider,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { useState } from "react";
 import { shopify } from "../shopify.server";
 import { loadSession } from "../lib/session.server";
 import { checkBillingStatus } from "../lib/billing.server";
@@ -33,13 +39,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   // For embedded apps, verify session exists for this shop
-  // The session should have been created during OAuth
   const sessionId = `offline_${shop}`;
   const session = await loadSession(sessionId);
 
   if (!session) {
     // For embedded apps, we need to exit iframe and do OAuth
-    // Return HTML that uses App Bridge to redirect
     const authUrl = `${process.env.APP_URL || process.env.HOST}/auth?shop=${shop}`;
     return new Response(
       `<!DOCTYPE html>
@@ -88,9 +92,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     billing,
     merchant: merchant || {
       sync_enabled: true,
+      sync_mode: "all",
       skip_gift_cards: true,
       skip_non_physical: true,
-      excluded_tags: "",
+      included_tags: "",
       printavo_api_key: "",
     },
     activityLogs: activityLogs || [],
@@ -105,25 +110,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (intent === "update_settings") {
     const syncEnabled = formData.get("sync_enabled") === "on";
+    const syncMode = formData.get("sync_mode") as string || "all";
     const skipGiftCards = formData.get("skip_gift_cards") === "on";
     const skipNonPhysical = formData.get("skip_non_physical") === "on";
-    const excludedTags = formData.get("excluded_tags") as string;
-    const printavoApiKey = formData.get("printavo_api_key") as string;
+    const includedTags = formData.get("included_tags") as string || "";
+    const printavoApiKey = formData.get("printavo_api_key") as string || "";
 
     db.prepare(`
-      INSERT OR REPLACE INTO merchants (
-        shop, sync_enabled, skip_gift_cards, skip_non_physical, 
-        excluded_tags, printavo_api_key, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-    `).run(shop, syncEnabled ? 1 : 0, skipGiftCards ? 1 : 0, skipNonPhysical ? 1 : 0, excludedTags, printavoApiKey);
+      INSERT OR REPLACE INTO merchants 
+      (shop, sync_enabled, sync_mode, skip_gift_cards, skip_non_physical, included_tags, printavo_api_key)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      shop,
+      syncEnabled ? 1 : 0,
+      syncMode,
+      skipGiftCards ? 1 : 0,
+      skipNonPhysical ? 1 : 0,
+      includedTags,
+      printavoApiKey
+    );
 
-    return json({ success: true, message: "Settings updated" });
+    return json({ success: true, message: "Settings saved successfully" });
   }
 
   if (intent === "test_connection") {
     const apiKey = formData.get("api_key") as string;
     const result = await testPrintavoConnection(apiKey);
-    return json(result);
+    return json({
+      success: result.success,
+      message: result.message,
+    });
   }
 
   return json({ success: false, message: "Invalid action" });
@@ -133,27 +149,21 @@ export default function Dashboard() {
   const { shop, host, billing, merchant, activityLogs, apiKey } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
-  const app = useAppBridge();
+  
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [apiKeyValue, setApiKeyValue] = useState(merchant.printavo_api_key || "");
+  const [syncMode, setSyncMode] = useState(merchant.sync_mode || "all");
+  const [includedTags, setIncludedTags] = useState(merchant.included_tags || "");
 
-  const handleToggle = (field: string, value: boolean) => {
-    const formData = new FormData();
-    formData.append("intent", "update_settings");
-    formData.append("shop", shop);
-    formData.append("sync_enabled", safeMerchant.sync_enabled ? "on" : "off");
-    formData.append("skip_gift_cards", safeMerchant.skip_gift_cards ? "on" : "off");
-    formData.append("skip_non_physical", safeMerchant.skip_non_physical ? "on" : "off");
-    formData.append("excluded_tags", safeMerchant.excluded_tags || "");
-    formData.append("printavo_api_key", safeMerchant.printavo_api_key || "");
-
-    if (field === "sync_enabled") {
-      formData.set("sync_enabled", value ? "on" : "off");
-    } else if (field === "skip_gift_cards") {
-      formData.set("skip_gift_cards", value ? "on" : "off");
-    } else if (field === "skip_non_physical") {
-      formData.set("skip_non_physical", value ? "on" : "off");
-    }
-
-    submit(formData, { method: "post" });
+  const safeLogs = Array.isArray(activityLogs) ? activityLogs : [];
+  const safeBilling = billing || { status: "pending", trialEndsAt: null };
+  const safeMerchant = merchant || {
+    sync_enabled: true,
+    sync_mode: "all",
+    skip_gift_cards: true,
+    skip_non_physical: true,
+    included_tags: "",
+    printavo_api_key: "",
   };
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
@@ -167,20 +177,9 @@ export default function Dashboard() {
   const handleTestConnection = () => {
     const formData = new FormData();
     formData.append("intent", "test_connection");
-    formData.append("api_key", merchant.printavo_api_key || "");
+    formData.append("api_key", apiKeyValue);
     submit(formData, { method: "post" });
   };
-
-  const safeLogs = Array.isArray(activityLogs) ? activityLogs : [];
-  const safeBilling = billing || { status: "pending", trialEndsAt: null };
-  const safeMerchant =
-    merchant || {
-      sync_enabled: true,
-      skip_gift_cards: true,
-      skip_non_physical: true,
-      excluded_tags: "",
-      printavo_api_key: "",
-    };
 
   const activityRows = safeLogs.map((log) => [
     log.order_name || "N/A",
@@ -200,15 +199,21 @@ export default function Dashboard() {
         forceRedirect: true,
       }}
     >
-      <Page title="Printavo Sync">
+      <Page
+        title="Printavo Sync"
+        subtitle="Automatically send approved Shopify orders to Printavo."
+      >
         {safeBilling.status !== "active" && !isTrialActive && (
-          <Banner status="critical" title="Billing Required">
-            <p>Please complete billing setup to continue using the app.</p>
+          <Banner tone="info" title="Billing Setup">
+            <p>
+              Billing is required to enable automatic order syncing. You can configure 
+              settings before activating a plan.
+            </p>
           </Banner>
         )}
 
         {isTrialActive && (
-          <Banner status="info" title="Trial Active">
+          <Banner tone="info" title="Trial Active">
             <p>
               Your 7-day trial ends on {new Date(safeBilling.trialEndsAt!).toLocaleDateString()}
             </p>
@@ -217,7 +222,7 @@ export default function Dashboard() {
 
         {actionData?.message && (
           <Banner
-            status={actionData.success ? "success" : "critical"}
+            tone={actionData.success ? "success" : "critical"}
             title={actionData.success ? "Success" : "Error"}
           >
             <p>{actionData.message}</p>
@@ -227,90 +232,122 @@ export default function Dashboard() {
         <Layout>
           <Layout.Section>
             <Card>
-              <Box display="flex" flexDirection="column" gap="400">
+              <BlockStack gap="400">
                 <Text variant="headingMd" as="h2">
-                  Sync Settings
+                  Connect to Printavo
                 </Text>
+                
+                <TextField
+                  label="Printavo API Key"
+                  value={apiKeyValue}
+                  onChange={setApiKeyValue}
+                  helpText="Your Printavo API key for order synchronization"
+                  autoComplete="off"
+                />
 
-                <Form onSubmit={handleSave}>
-                  <Box display="flex" flexDirection="column" gap="300">
-                    <Checkbox
-                      label="Enable Sync"
-                      checked={safeMerchant.sync_enabled === 1 || safeMerchant.sync_enabled === true}
-                      onChange={(checked) => handleToggle("sync_enabled", checked)}
-                    />
-
-                    <Checkbox
-                      label="Skip Gift Cards"
-                      checked={safeMerchant.skip_gift_cards === 1 || safeMerchant.skip_gift_cards === true}
-                      onChange={(checked) => handleToggle("skip_gift_cards", checked)}
-                    />
-
-                    <Checkbox
-                      label="Skip Non-Physical Products"
-                      checked={safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true}
-                      onChange={(checked) => handleToggle("skip_non_physical", checked)}
-                    />
-
-                    <TextField
-                      label="Excluded Tags"
-                      value={safeMerchant.excluded_tags || ""}
-                      onChange={(value) => {
-                        const formData = new FormData();
-                        formData.append("intent", "update_settings");
-                        formData.append("shop", shop);
-                        formData.append("sync_enabled", merchant.sync_enabled ? "on" : "off");
-                        formData.append("skip_gift_cards", merchant.skip_gift_cards ? "on" : "off");
-                        formData.append("skip_non_physical", merchant.skip_non_physical ? "on" : "off");
-                        formData.append("excluded_tags", value);
-                        formData.append("printavo_api_key", merchant.printavo_api_key || "");
-                        submit(formData, { method: "post" });
-                      }}
-                      helpText="Comma-separated list of tags to exclude (e.g., no-print, internal-use)"
-                      autoComplete="off"
-                    />
-
-                    <TextField
-                      label="Printavo API Key"
-                      type="password"
-                      value={safeMerchant.printavo_api_key || ""}
-                      onChange={(value) => {
-                        const formData = new FormData();
-                        formData.append("intent", "update_settings");
-                        formData.append("shop", shop);
-                        formData.append("sync_enabled", merchant.sync_enabled ? "on" : "off");
-                        formData.append("skip_gift_cards", merchant.skip_gift_cards ? "on" : "off");
-                        formData.append("skip_non_physical", merchant.skip_non_physical ? "on" : "off");
-                        formData.append("excluded_tags", merchant.excluded_tags || "");
-                        formData.append("printavo_api_key", value);
-                        submit(formData, { method: "post" });
-                      }}
-                      helpText="Your Printavo API key for order synchronization"
-                      autoComplete="off"
-                    />
-
-                    <Button onClick={handleTestConnection} submit>
-                      Test Connection
-                    </Button>
-                  </Box>
-                </Form>
-              </Box>
+                <InlineStack gap="200">
+                  <Button onClick={handleTestConnection}>
+                    Test Connection
+                  </Button>
+                  {actionData?.success && actionData.message.includes("success") && (
+                    <Badge tone="success">Connected</Badge>
+                  )}
+                </InlineStack>
+              </BlockStack>
             </Card>
           </Layout.Section>
 
           <Layout.Section>
             <Card>
-              <Box display="flex" flexDirection="column" gap="300">
+              <BlockStack gap="400">
+                <InlineStack align="space-between" blockAlign="center">
+                  <Text variant="headingMd" as="h2">
+                    Sync Settings
+                  </Text>
+                  <Button
+                    plain
+                    onClick={() => setAdvancedOpen(!advancedOpen)}
+                    ariaExpanded={advancedOpen}
+                    ariaControls="advanced-settings"
+                  >
+                    {advancedOpen ? "Hide" : "Show"} Advanced Settings
+                  </Button>
+                </InlineStack>
+
+                <Collapsible
+                  open={advancedOpen}
+                  id="advanced-settings"
+                  transition={{ duration: "200ms", timingFunction: "ease-in-out" }}
+                >
+                  <Form onSubmit={handleSave}>
+                    <BlockStack gap="400">
+                      <ChoiceList
+                        title="Sync Mode"
+                        choices={[
+                          { label: "Sync all orders", value: "all" },
+                          { label: "Sync only tagged orders (recommended for production)", value: "tagged" },
+                        ]}
+                        selected={[syncMode]}
+                        onChange={(value) => setSyncMode(value[0])}
+                      />
+
+                      {syncMode === "tagged" && (
+                        <TextField
+                          label="Included Tags"
+                          value={includedTags}
+                          onChange={setIncludedTags}
+                          name="included_tags"
+                          helpText="Only orders containing one of these tags will be sent to Printavo."
+                          placeholder="production, ready-for-print, approved"
+                          autoComplete="off"
+                        />
+                      )}
+
+                      <Divider />
+
+                      <Checkbox
+                        label="Skip Gift Cards"
+                        checked={safeMerchant.skip_gift_cards === 1 || safeMerchant.skip_gift_cards === true}
+                        name="skip_gift_cards"
+                        helpText="Gift card orders will not be sent to Printavo."
+                      />
+
+                      <Checkbox
+                        label="Skip Non-Physical Products"
+                        checked={safeMerchant.skip_non_physical === 1 || safeMerchant.skip_non_physical === true}
+                        name="skip_non_physical"
+                        helpText="Digital or service products will be excluded."
+                      />
+
+                      <input type="hidden" name="sync_mode" value={syncMode} />
+                      <input type="hidden" name="printavo_api_key" value={apiKeyValue} />
+                      <input type="hidden" name="sync_enabled" value="on" />
+
+                      <Button submit variant="primary">
+                        Save Settings
+                      </Button>
+                    </BlockStack>
+                  </Form>
+                </Collapsible>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="400">
                 <Text variant="headingMd" as="h2">
                   Activity Log
                 </Text>
 
                 {safeLogs.length === 0 ? (
                   <EmptyState
-                    heading="No activity yet"
+                    heading="No sync activity yet"
                     image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                   >
-                    <p>Order sync activity will appear here once orders are created.</p>
+                    <p>
+                      Order sync activity will appear here once orders matching your sync rules are created.
+                    </p>
                   </EmptyState>
                 ) : (
                   <DataTable
@@ -319,7 +356,7 @@ export default function Dashboard() {
                     rows={activityRows}
                   />
                 )}
-              </Box>
+              </BlockStack>
             </Card>
           </Layout.Section>
         </Layout>

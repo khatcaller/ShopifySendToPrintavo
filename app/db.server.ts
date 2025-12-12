@@ -58,6 +58,19 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_logs(created_at);
 `);
 
+// Add new columns for sync_mode and included_tags (migration)
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN sync_mode TEXT DEFAULT 'all';`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN included_tags TEXT DEFAULT '';`);
+} catch (e) {
+  // Column already exists
+}
+
 export { db };
 
 
