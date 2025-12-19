@@ -198,13 +198,21 @@ export default function Dashboard() {
   const handleTestConnection = () => {
     if (!printavoApiKey) return;
     
+    console.log("[UI] Test Connection clicked, API key length:", printavoApiKey.length);
     const formData = new FormData();
     formData.append("intent", "test_connection");
     formData.append("api_key", printavoApiKey);
+    console.log("[UI] Submitting test connection request...");
     testConnectionFetcher.submit(formData, { method: "post" });
   };
 
-  const isTestingConnection = testConnectionFetcher.state !== "idle";
+  const isTestingConnection = testConnectionFetcher.state === "submitting" || testConnectionFetcher.state === "loading";
+
+  // Debug: Log fetcher state
+  useEffect(() => {
+    console.log("[UI] testConnectionFetcher.state:", testConnectionFetcher.state);
+    console.log("[UI] testConnectionFetcher.data:", testConnectionFetcher.data);
+  }, [testConnectionFetcher.state, testConnectionFetcher.data]);
 
   const handleSaveSettings = () => {
     const formData = new FormData();
@@ -335,7 +343,7 @@ export default function Dashboard() {
                       <Button
                         onClick={handleTestConnection}
                         loading={isTestingConnection}
-                        disabled={!printavoApiKey}
+                        disabled={!printavoApiKey || isTestingConnection}
                       >
                         Test Connection
                       </Button>
