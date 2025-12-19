@@ -209,14 +209,13 @@ export default function Dashboard() {
     formData.append("api_key", printavoApiKey);
     console.log("[UI] Submitting test connection request...");
     
-    // Include current URL search params to maintain Shopify context
-    const currentUrl = new URL(window.location.href);
-    const actionUrl = `?${currentUrl.searchParams.toString()}`;
-    console.log("[UI] Submitting to:", actionUrl);
+    // Fetcher needs relative path with query params for Shopify embedded app
+    const searchParams = new URLSearchParams(window.location.search);
+    console.log("[UI] Current search params:", searchParams.toString());
     
     testConnectionFetcher.submit(formData, { 
       method: "post",
-      action: actionUrl
+      // Don't specify action - let it default to current route
     });
   };
 
