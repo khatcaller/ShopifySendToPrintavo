@@ -17,6 +17,7 @@ import {
   InlineGrid,
   Divider,
 } from "@shopify/polaris";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { useState, useEffect } from "react";
 import { shopify } from "../shopify.server";
 import { loadSession } from "../lib/session.server";
@@ -188,6 +189,14 @@ export default function Dashboard() {
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const testConnectionFetcher = useFetcher<typeof action>();
+
+  // Initialize App Bridge
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.shopify) {
+      // App Bridge is already loaded via script tag in root.tsx
+      console.log("[App Bridge] Available");
+    }
+  }, []);
 
   // Defensive state initialization with safe defaults
   const [printavoApiKey, setPrintavoApiKey] = useState(merchant?.printavo_api_key || "");
