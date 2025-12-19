@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useLoaderData, useActionData, useSubmit, Form } from "@remix-run/react";
+import { useLoaderData, useActionData, useSubmit, useFetcher, Form } from "@remix-run/react";
 import {
   AppProvider,
   Page,
@@ -158,13 +158,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
 
   if (intent === "test_connection") {
+    console.log("[ACTION] Test connection request received");
     const apiKey = formData.get("api_key") as string;
     
     if (!apiKey) {
+      console.log("[ACTION] No API key provided");
       return json({ success: false, message: "API key is required" });
     }
 
+    console.log("[ACTION] Testing Printavo connection...");
     const result = await testPrintavoConnection(apiKey);
+    console.log("[ACTION] Test result:", result);
     return json({
       success: result.success,
       message: result.message,
@@ -178,6 +182,7 @@ export default function Dashboard() {
   const { shop, host, merchant, activityLogs, stats, apiKey } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
+  const testConnectionFetcher = useFetcher<typeof action>();
 
   // Defensive state initialization with safe defaults
   const [printavoApiKey, setPrintavoApiKey] = useState(merchant?.printavo_api_key || "");
@@ -189,23 +194,17 @@ export default function Dashboard() {
   const [lineItemSkipProperty, setLineItemSkipProperty] = useState(merchant?.line_item_skip_property || "printavo_skip");
   const [skipGiftCards, setSkipGiftCards] = useState(Boolean(merchant?.skip_gift_cards));
   const [skipNonPhysical, setSkipNonPhysical] = useState(Boolean(merchant?.skip_non_physical));
-  const [testing, setTesting] = useState(false);
-
-  useEffect(() => {
-    if (actionData && testing) {
-      setTesting(false);
-    }
-  }, [actionData, testing]);
 
   const handleTestConnection = () => {
     if (!printavoApiKey) return;
     
-    setTesting(true);
     const formData = new FormData();
     formData.append("intent", "test_connection");
     formData.append("api_key", printavoApiKey);
-    submit(formData, { method: "post" });
+    testConnectionFetcher.submit(formData, { method: "post" });
   };
+
+  const isTestingConnection = testConnectionFetcher.state !== "idle";
 
   const handleSaveSettings = () => {
     const formData = new FormData();
@@ -278,6 +277,14 @@ export default function Dashboard() {
             </Banner>
           )}
 
+          {testConnectionFetcher.data?.message && (
+            <Banner
+              tone={testConnectionFetcher.data.success ? "success" : "critical"}
+            >
+              {testConnectionFetcher.data.message}
+            </Banner>
+          )}
+
           {/* Connection Status */}
           <Layout>
             <Layout.Section>
@@ -327,7 +334,7 @@ export default function Dashboard() {
                     <InlineStack gap="200">
                       <Button
                         onClick={handleTestConnection}
-                        loading={testing}
+                        loading={isTestingConnection}
                         disabled={!printavoApiKey}
                       >
                         Test Connection
