@@ -9,8 +9,8 @@ export async function registerWebhooks(session: any): Promise<void> {
   
   const webhooks = [
     {
-      topic: "orders/create",
-      address: `${shopify.config.hostScheme}://${shopify.config.hostName}/webhooks/orders/create`,
+      topic: "orders/paid",
+      address: `${shopify.config.hostScheme}://${shopify.config.hostName}/webhooks/orders/paid`,
     },
     {
       topic: "app/uninstalled",

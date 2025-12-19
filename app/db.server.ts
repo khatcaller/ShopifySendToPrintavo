@@ -53,9 +53,24 @@ db.exec(`
     FOREIGN KEY (shop) REFERENCES merchants(shop)
   );
 
+  CREATE TABLE IF NOT EXISTS order_mappings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shop TEXT NOT NULL,
+    shopify_order_id TEXT NOT NULL,
+    shopify_order_name TEXT,
+    printavo_quote_id TEXT NOT NULL,
+    printavo_contact_id TEXT,
+    printavo_customer_id TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (shop) REFERENCES merchants(shop),
+    UNIQUE(shop, shopify_order_id)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_sessions_shop ON sessions(shop);
   CREATE INDEX IF NOT EXISTS idx_activity_shop ON activity_logs(shop);
   CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_logs(created_at);
+  CREATE INDEX IF NOT EXISTS idx_order_mappings_shop ON order_mappings(shop);
+  CREATE INDEX IF NOT EXISTS idx_order_mappings_shopify_id ON order_mappings(shopify_order_id);
 `);
 
 // Add new columns for sync_mode and included_tags (migration)
@@ -67,6 +82,36 @@ try {
 
 try {
   db.exec(`ALTER TABLE merchants ADD COLUMN included_tags TEXT DEFAULT '';`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN exclude_tag TEXT DEFAULT 'no-printavo';`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN require_include_tag INTEGER DEFAULT 0;`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN include_tag TEXT DEFAULT 'printavo';`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN line_item_skip_property TEXT DEFAULT 'printavo_skip';`);
+} catch (e) {
+  // Column already exists
+}
+
+try {
+  db.exec(`ALTER TABLE merchants ADD COLUMN respect_line_item_skip INTEGER DEFAULT 0;`);
 } catch (e) {
   // Column already exists
 }
