@@ -209,32 +209,58 @@ export default function Dashboard() {
   const [skipGiftCards, setSkipGiftCards] = useState(Boolean(merchant?.skip_gift_cards));
   const [skipNonPhysical, setSkipNonPhysical] = useState(Boolean(merchant?.skip_non_physical));
 
-  const handleTestConnection = () => {
+  const handleTestConnection = async () => {
     if (!printavoApiKey) return;
     
     console.log("[UI] Test Connection clicked, API key length:", printavoApiKey.length);
-    const formData = new FormData();
-    formData.append("intent", "test_connection");
-    formData.append("api_key", printavoApiKey);
-    console.log("[UI] Submitting test connection request...");
     
-    // Fetcher needs relative path with query params for Shopify embedded app
-    const searchParams = new URLSearchParams(window.location.search);
-    console.log("[UI] Current search params:", searchParams.toString());
-    
-    testConnectionFetcher.submit(formData, { 
-      method: "post",
-      // Don't specify action - let it default to current route
-    });
+    // Use direct fetch instead of useFetcher to bypass App Bridge interception
+    try {
+      setTesting(true);
+      console.log("[UI] Sending direct fetch request...");
+      
+      const response = await fetch(window.location.href, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          intent: "test_connection",
+          api_key: printavoApiKey,
+        }),
+      });
+      
+      console.log("[UI] Response status:", response.status);
+      const data = await response.json();
+      console.log("[UI] Response data:", data);
+      
+      setTestResult(data);
+      setTesting(false);
+    } catch (error: any) {
+      console.error("[UI] Fetch error:", error);
+      setTestResult({ success: false, message: "Network error: " + (error?.message || String(error)) });
+      setTesting(false);
+    }
   };
 
-  const isTestingConnection = testConnectionFetcher.state === "submitting" || testConnectionFetcher.state === "loading";
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
+
+  const isTestingConnection = testing;
 
   // Debug: Log fetcher state
   useEffect(() => {
     console.log("[UI] testConnectionFetcher.state:", testConnectionFetcher.state);
     console.log("[UI] testConnectionFetcher.data:", testConnectionFetcher.data);
   }, [testConnectionFetcher.state, testConnectionFetcher.data]);
+  
+  // Clear test result after a few seconds
+  useEffect(() => {
+    if (testResult) {
+      const timer = setTimeout(() => setTestResult(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [testResult]);
 
   const handleSaveSettings = () => {
     const formData = new FormData();
@@ -307,11 +333,11 @@ export default function Dashboard() {
             </Banner>
           )}
 
-          {testConnectionFetcher.data?.message && (
+          {testResult?.message && (
             <Banner
-              tone={testConnectionFetcher.data.success ? "success" : "critical"}
+              tone={testResult.success ? "success" : "critical"}
             >
-              {testConnectionFetcher.data.message}
+              {testResult.message}
             </Banner>
           )}
 
@@ -369,7 +395,7 @@ export default function Dashboard() {
                       >
                         Test Connection
                       </Button>
-                      {isPrintavoConnected && (
+                      {isPrintavoConnected && !testing && (
                         <Button
                           onClick={() => setPrintavoApiKey("")}
                         >
