@@ -202,6 +202,9 @@ async function printavoGraphQL<T = any>(
   query: string,
   variables: Record<string, any> = {}
 ): Promise<{ data?: T; errors?: any[] }> {
+  console.log("[GraphQL] Sending request to Printavo API...");
+  console.log("[GraphQL] API key present:", !!apiKey, "length:", apiKey?.length || 0);
+  
   const response = await fetch("https://www.printavo.com/api/v2/graphql", {
     method: "POST",
     headers: {
@@ -211,11 +214,15 @@ async function printavoGraphQL<T = any>(
     body: JSON.stringify({ query, variables }),
   });
 
+  console.log("[GraphQL] Response status:", response.status, response.statusText);
+
   if (!response.ok) {
     throw new Error(`Printavo API error: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[GraphQL] Response data:", data);
+  return data;
 }
 
 // ============================================================================
@@ -727,6 +734,8 @@ export async function testPrintavoConnection(apiKey: string): Promise<{
   success: boolean;
   message: string;
 }> {
+  console.log("[PRINTAVO] Testing connection...");
+  
   try {
     // Simple introspection query to test connection
     const testQuery = `
@@ -735,19 +744,37 @@ export async function testPrintavoConnection(apiKey: string): Promise<{
       }
     `;
 
-    const result = await printavoGraphQL(apiKey, testQuery);
+    console.log("[PRINTAVO] Sending GraphQL request to Printavo...");
+    
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Request timed out after 10 seconds")), 10000);
+    });
+
+    const result = await Promise.race([
+      printavoGraphQL(apiKey, testQuery),
+      timeoutPromise
+    ]) as any;
+
+    console.log("[PRINTAVO] Received response:", result);
 
     if (result.errors) {
+      console.log("[PRINTAVO] GraphQL errors:", result.errors);
       return {
         success: false,
         message: `API Error: ${JSON.stringify(result.errors)}`,
       };
     }
 
+    console.log("[PRINTAVO] Connection successful!");
     return { success: true, message: "Connection successful" };
   } catch (error: any) {
+    console.log("[PRINTAVO] Connection error:", error.message);
     if (error.message.includes("401") || error.message.includes("403")) {
       return { success: false, message: "Invalid API key" };
+    }
+    if (error.message.includes("timed out")) {
+      return { success: false, message: "Connection timed out - check your network or API key" };
     }
     return {
       success: false,
