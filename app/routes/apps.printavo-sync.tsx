@@ -121,8 +121,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  console.log("[ACTION] Received request, method:", request.method);
+  console.log("[ACTION] URL:", request.url);
+  
   const formData = await request.formData();
   const intent = formData.get("intent");
+  console.log("[ACTION] Intent:", intent);
+  
   const shop = formData.get("shop") as string;
 
   if (intent === "save_settings") {
@@ -203,7 +208,16 @@ export default function Dashboard() {
     formData.append("intent", "test_connection");
     formData.append("api_key", printavoApiKey);
     console.log("[UI] Submitting test connection request...");
-    testConnectionFetcher.submit(formData, { method: "post" });
+    
+    // Include current URL search params to maintain Shopify context
+    const currentUrl = new URL(window.location.href);
+    const actionUrl = `?${currentUrl.searchParams.toString()}`;
+    console.log("[UI] Submitting to:", actionUrl);
+    
+    testConnectionFetcher.submit(formData, { 
+      method: "post",
+      action: actionUrl
+    });
   };
 
   const isTestingConnection = testConnectionFetcher.state === "submitting" || testConnectionFetcher.state === "loading";
