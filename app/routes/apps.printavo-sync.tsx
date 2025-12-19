@@ -360,7 +360,7 @@ export default function Dashboard() {
                           Last successful sync
                         </Text>
                         <Text as="p" variant="headingSm">
-                          {formatTimestamp(stats.lastSuccess)}
+                          {formatTimestamp(stats?.lastSuccess || null)}
                         </Text>
                       </BlockStack>
 
@@ -369,7 +369,7 @@ export default function Dashboard() {
                           Orders synced today
                         </Text>
                         <Text as="p" variant="headingSm">
-                          {stats.syncedToday}
+                          {stats?.syncedToday || 0}
                         </Text>
                       </BlockStack>
 
@@ -378,10 +378,10 @@ export default function Dashboard() {
                           Failed syncs today
                         </Text>
                         <Text as="p" variant="headingSm">
-                          {stats.failedToday > 0 ? (
-                            <Text as="span" tone="critical">{stats.failedToday}</Text>
+                          {(stats?.failedToday || 0) > 0 ? (
+                            <Text as="span" tone="critical">{stats?.failedToday || 0}</Text>
                           ) : (
-                            stats.failedToday
+                            stats?.failedToday || 0
                           )}
                         </Text>
                       </BlockStack>
