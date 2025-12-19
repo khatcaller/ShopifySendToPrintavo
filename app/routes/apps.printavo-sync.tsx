@@ -18,6 +18,7 @@ import {
   Divider,
 } from "@shopify/polaris";
 import { useAppBridge } from "@shopify/app-bridge-react";
+import { authenticatedFetch } from "@shopify/app-bridge/utilities";
 import { useState, useEffect } from "react";
 import { shopify } from "../shopify.server";
 import { loadSession } from "../lib/session.server";
@@ -189,6 +190,7 @@ export default function Dashboard() {
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const testConnectionFetcher = useFetcher<typeof action>();
+  const app = useAppBridge();
 
   // Initialize App Bridge
   useEffect(() => {
@@ -210,15 +212,18 @@ export default function Dashboard() {
   const [skipNonPhysical, setSkipNonPhysical] = useState(Boolean(merchant?.skip_non_physical));
 
   const handleTestConnection = async () => {
-    if (!printavoApiKey) return;
+    if (!printavoApiKey || !app) return;
     
     console.log("[UI] Test Connection clicked, API key length:", printavoApiKey.length);
     
-    // Use direct fetch instead of useFetcher to bypass App Bridge interception
+    // Use App Bridge's authenticatedFetch to include session token
     try {
       setTesting(true);
-      console.log("[UI] Sending direct fetch request...");
+      console.log("[UI] Creating authenticated fetch...");
       
+      const fetch = authenticatedFetch(app);
+      
+      console.log("[UI] Sending authenticated request...");
       const response = await fetch(window.location.href, {
         method: "POST",
         headers: {
