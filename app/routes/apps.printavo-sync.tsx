@@ -66,7 +66,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
   }
 
-  const merchant = db.prepare("SELECT * FROM merchants WHERE shop = ?").get(shop) as any;
+  const merchantRow = db.prepare("SELECT * FROM merchants WHERE shop = ?").get(shop) as any;
 
   // Get activity logs
   const activityLogs = db
@@ -93,24 +93,27 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     `)
     .get(shop, startOfDay.toISOString()) as any;
 
+  // Always return a safe merchant object with proper defaults
+  const merchant = {
+    sync_enabled: merchantRow?.sync_enabled ?? 1,
+    printavo_api_key: merchantRow?.printavo_api_key ?? "",
+    exclude_tag: merchantRow?.exclude_tag ?? "no-printavo",
+    require_include_tag: merchantRow?.require_include_tag ?? 0,
+    include_tag: merchantRow?.include_tag ?? "printavo",
+    respect_line_item_skip: merchantRow?.respect_line_item_skip ?? 0,
+    line_item_skip_property: merchantRow?.line_item_skip_property ?? "printavo_skip",
+    skip_gift_cards: merchantRow?.skip_gift_cards ?? 1,
+    skip_non_physical: merchantRow?.skip_non_physical ?? 1,
+  };
+
   return json({
     shop,
     host,
-    merchant: merchant || {
-      sync_enabled: true,
-      printavo_api_key: "",
-      exclude_tag: "no-printavo",
-      require_include_tag: false,
-      include_tag: "printavo",
-      respect_line_item_skip: false,
-      line_item_skip_property: "printavo_skip",
-      skip_gift_cards: true,
-      skip_non_physical: true,
-    },
-    activityLogs: activityLogs || [],
+    merchant,
+    activityLogs: Array.isArray(activityLogs) ? activityLogs : [],
     stats: {
-      syncedToday: statsToday?.synced_count || 0,
-      failedToday: statsToday?.failed_count || 0,
+      syncedToday: Number(statsToday?.synced_count) || 0,
+      failedToday: Number(statsToday?.failed_count) || 0,
       lastSuccess: statsToday?.last_success || null,
     },
     apiKey: process.env.SHOPIFY_API_KEY || "",
@@ -176,15 +179,16 @@ export default function Dashboard() {
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
 
-  const [printavoApiKey, setPrintavoApiKey] = useState(merchant.printavo_api_key || "");
-  const [syncEnabled, setSyncEnabled] = useState(merchant.sync_enabled !== 0);
-  const [excludeTag, setExcludeTag] = useState(merchant.exclude_tag || "no-printavo");
-  const [requireIncludeTag, setRequireIncludeTag] = useState(merchant.require_include_tag === 1);
-  const [includeTag, setIncludeTag] = useState(merchant.include_tag || "printavo");
-  const [respectLineItemSkip, setRespectLineItemSkip] = useState(merchant.respect_line_item_skip === 1);
-  const [lineItemSkipProperty, setLineItemSkipProperty] = useState(merchant.line_item_skip_property || "printavo_skip");
-  const [skipGiftCards, setSkipGiftCards] = useState(merchant.skip_gift_cards !== 0);
-  const [skipNonPhysical, setSkipNonPhysical] = useState(merchant.skip_non_physical !== 0);
+  // Defensive state initialization with safe defaults
+  const [printavoApiKey, setPrintavoApiKey] = useState(merchant?.printavo_api_key || "");
+  const [syncEnabled, setSyncEnabled] = useState(Boolean(merchant?.sync_enabled));
+  const [excludeTag, setExcludeTag] = useState(merchant?.exclude_tag || "no-printavo");
+  const [requireIncludeTag, setRequireIncludeTag] = useState(Boolean(merchant?.require_include_tag));
+  const [includeTag, setIncludeTag] = useState(merchant?.include_tag || "printavo");
+  const [respectLineItemSkip, setRespectLineItemSkip] = useState(Boolean(merchant?.respect_line_item_skip));
+  const [lineItemSkipProperty, setLineItemSkipProperty] = useState(merchant?.line_item_skip_property || "printavo_skip");
+  const [skipGiftCards, setSkipGiftCards] = useState(Boolean(merchant?.skip_gift_cards));
+  const [skipNonPhysical, setSkipNonPhysical] = useState(Boolean(merchant?.skip_non_physical));
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
@@ -545,7 +549,7 @@ export default function Dashboard() {
                     Activity Log
                   </Text>
 
-                  {activityLogs.length === 0 ? (
+                  {!activityLogs || activityLogs.length === 0 ? (
                     <EmptyState
                       heading="No sync activity yet"
                       image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
@@ -556,7 +560,7 @@ export default function Dashboard() {
                     </EmptyState>
                   ) : (
                     <BlockStack gap="300">
-                      {activityLogs.map((log: any, index: number) => (
+                      {activityLogs?.map((log: any, index: number) => (
                         <div key={index} style={{ borderBottom: index < activityLogs.length - 1 ? '1px solid #e1e3e5' : 'none', paddingBottom: '12px' }}>
                           <BlockStack gap="200">
                             <InlineStack align="space-between" blockAlign="center">
